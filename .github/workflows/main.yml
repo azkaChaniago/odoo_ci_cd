@@ -1,1 +1,38 @@
+name: Odoo CI with Custom Addon
 
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install Odoo dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install python3-pip
+        pip3 install wheel
+        pip3 install -r requirements.txt
+
+    - name: Clone custom addon repository
+      uses: actions/checkout@v2
+      with:
+        repository: username/custom-addon-repo
+        ref: main
+        path: custom_addon
+
+    - name: Install custom addon
+      run: |
+        sudo mkdir -p /usr/lib/python3/dist-packages/odoo/addons/custom_addon
+        sudo cp -r custom_addon/* /usr/lib/python3/dist-packages/odoo/addons/custom_addon/
+        sudo chown -R odoo:odoo /usr/lib/python3/dist-packages/odoo/addons/custom_addon/
+
+    - name: Run Odoo tests
+      run: |
+        python3 -m unittest discover -s tests/ -p "*_test.py"
